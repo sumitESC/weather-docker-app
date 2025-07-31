@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather App</title>
+  <style>
+  /* General Reset and Layout */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background: linear-gradient(to right, #4facfe, #00f2fe);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+  color: #333;
+}
+
+/* Main Container */
+.container {
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  max-width: 600px;
+  width: 100%;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Input and Buttons */
+input[type="text"] {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 1rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  transition: border-color 0.3s;
+}
+
+input[type="text"]:focus {
+  border-color: #4facfe;
+  outline: none;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  margin-right: 10px;
+  margin-top: 8px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+  background: #4facfe;
+  color: white;
+}
+
+button:hover {
+  background: #00c6ff;
+  transform: translateY(-2px);
+}
+
+/* Weather Output Box */
+#weather-output {
+  margin-top: 20px;
+  padding: 20px;
+  background: #f9f9f9;
+  border-left: 4px solid #4facfe;
+  border-radius: 8px;
+}
+
+#weather-output p {
+  margin-bottom: 10px;
+  line-height: 1.5;
+  font-size: 1rem;
+}
+
+/* Headings */
+h1 {
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  color: #222;
+  text-align: center;
+}
+
+strong {
+  color: #111;
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .container {
+    padding: 20px;
+  }
+
+  button {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Weather App</h2>
+    <input type="text" id="city" placeholder="Enter city name (e.g. Delhi)" />
+    <div>
+      <button onclick="getWeather()">Get Weather</button>
+      <button onclick="getCurrentLocationWeather()">📍 Current Location</button>
+    </div>
+    <div id="output" class="weather"></div>
+    <div id="error" class="error"></div>
+  </div>
+
+  <script>
+    const API_KEY = "2dddd1df705daf153d24d858619f3ec1";
+
+    function displayWeather(data) {
+      document.getElementById("error").textContent = "";
+      const output = `
+        <h3>Weather in ${data.name}, ${data.sys.country}</h3>
+        <p><strong>Temperature:</strong> ${data.main.temp}°C</p>
+        <p><strong>Feels Like:</strong> ${data.main.feels_like}°C</p>
+        <p><strong>Humidity:</strong> ${data.main.humidity}%</p>
+        <p><strong>Pressure:</strong> ${data.main.pressure} hPa</p>
+        <p><strong>Wind:</strong> ${data.wind.speed} m/s, ${data.wind.deg}°</p>
+        <p><strong>Visibility:</strong> ${data.visibility || "N/A"} meters</p>
+        <p><strong>Sunrise:</strong> ${new Date(data.sys.sunrise * 1000).toLocaleTimeString()}</p>
+        <p><strong>Sunset:</strong> ${new Date(data.sys.sunset * 1000).toLocaleTimeString()}</p>
+        <p><strong>Weather:</strong> ${data.weather[0].description}</p>
+      `;
+      document.getElementById("output").innerHTML = output;
+    }
+
+    function showError(message) {
+      document.getElementById("output").innerHTML = "";
+      document.getElementById("error").textContent = message;
+    }
+
+    function getWeather() {
+      const city = document.getElementById("city").value.trim();
+      if (!city) {
+        showError("Please enter a city name.");
+        return;
+      }
+
+      const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`;
+
+      fetch(apiUrl)
+        .then(res => res.json())
+        .then(data => {
+          if (data.cod !== 200) throw new Error(data.message);
+          displayWeather(data);
+        })
+        .catch(err => showError("Error: " + err.message));
+    }
+
+    function getCurrentLocationWeather() {
+      if (!navigator.geolocation) {
+        showError("Geolocation is not supported by your browser.");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          const { latitude, longitude } = position.coords;
+          const apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric`;
+
+          fetch(apiUrl)
+            .then(res => res.json())
+            .then(data => {
+              if (data.cod !== 200) throw new Error(data.message);
+              displayWeather(data);
+            })
+            .catch(err => showError("Error: " + err.message));
+        },
+        error => {
+          showError("Error fetching location: " + error.message);
+        }
+      );
+    }
+  </script>
+</body>
+</html>
